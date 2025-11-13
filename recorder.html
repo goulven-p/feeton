@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test Enregistrement Audio</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 600px;
+      margin: 50px auto;
+      padding: 20px;
+      text-align: center;
+    }
+    
+    button {
+      font-size: 16px;
+      padding: 12px 24px;
+      margin: 10px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    
+    #start {
+      background-color: #4CAF50;
+      color: white;
+    }
+    
+    #start:hover:not(:disabled) {
+      background-color: #45a049;
+    }
+    
+    #stop {
+      background-color: #f44336;
+      color: white;
+    }
+    
+    #stop:hover:not(:disabled) {
+      background-color: #da190b;
+    }
+    
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    
+    #status {
+      margin-top: 20px;
+      padding: 10px;
+      border-radius: 5px;
+      font-weight: bold;
+    }
+    
+    .recording {
+      background-color: #ffebee;
+      color: #c62828;
+    }
+    
+    .success {
+      background-color: #e8f5e9;
+      color: #2e7d32;
+    }
+    
+    .error {
+      background-color: #ffebee;
+      color: #c62828;
+    }
+  </style>
+</head>
+<body>
+  <h1>Enregistrer un audio</h1>
+  <button id="start">▶️ Démarrer l'enregistrement</button>
+  <button id="stop" disabled>⏹️ Arrêter l'enregistrement</button>
+  <div id="status"></div>
+
+  <script>
+    // Variables globales pour gérer l'enregistrement
+    let mediaRecorder;
+    let audioChunks = [];
+    let stream;
+
+    // Configuration de l'URL du webhook (à modifier)
+    const WEBHOOK_URL = "https://agoriade.app.n8n.cloud/webhook-test/8daae930-d4b3-4ac1-b70a-b030f37ad638";
+
+    // Fonction pour afficher un message de statut
+    function afficherStatut(message, type = '') {
+      const statusDiv = document.getElementById('status');
+      statusDiv.textContent = message;
+      statusDiv.className = type;
+    }
+
+    // Bouton Démarrer
+    document.getElementById("start").onclick = async () => {
+      try {
+        afficherStatut('Demande d\'accès au microphone...', '');
+        
+        // Demande d'accès au microphone
+        stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        
+        // Création du MediaRecorder
+        mediaRecorder = new MediaRecorder(stream);
+        audioChunks = [];
+
+        // Événement : quand des données audio sont disponibles
+        mediaRecorder.ondataavailable = (e) => {
+          if (e.data.size > 0) {
+            audioChunks.push(e.data);
+          }
+        };
+
+        // Événement : quand l'enregistrement s'arrête
+        mediaRecorder.onstop = async () => {
+          try {
+            afficherStatut('Envoi de l\'audio...', '');
+            
+            // Création du fichier audio
+            const blob = new Blob(audioChunks, { type: 'audio/webm' });
+            const formData = new FormData();
+            formData.append('file', blob, 'recording.webm');
+
+            // Envoi vers n8n
+            const response = await fetch(WEBHOOK_URL, {
+              method: "POST",
+              body: formData
+            });
+
+            if (response.ok) {
+              afficherStatut('✅ Audio envoyé avec succès !', 'success');
+            } else {
+              throw new Error(`Erreur serveur : ${response.status}`);
+            }
+          } catch (err) {
+            afficherStatut('❌ Erreur lors de l\'envoi : ' + err.message, 'error');
+            console.error(err);
+          } finally {
+            // Arrêt du flux audio
+            arreterFluxAudio();
+          }
+        };
+
+        // Démarrage de l'enregistrement
+        mediaRecorder.start();
+        afficherStatut('🔴 Enregistrement en cours...', 'recording');
+        
+        // Gestion des boutons
+        document.getElementById("start").disabled = true;
+        document.getElementById("stop").disabled = false;
+
+      } catch (err) {
+        afficherStatut('❌ Erreur d\'accès au micro : ' + err.message, 'error');
+        console.error(err);
+      }
+    };
+
+    // Bouton Arrêter
+    document.getElementById("stop").onclick = () => {
+      if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+        mediaRecorder.stop();
+        document.getElementById("start").disabled = false;
+        document.getElementById("stop").disabled = true;
+      }
+    };
+
+    // Fonction pour arrêter proprement le flux audio
+    function arreterFluxAudio() {
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+        stream = null;
+      }
+    }
+
+    // Nettoyage si l'utilisateur quitte la page
+    window.addEventListener('beforeunload', () => {
+      arreterFluxAudio();
+    });
+  </script>
+</body>
+</html>
