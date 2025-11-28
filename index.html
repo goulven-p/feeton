@@ -3,158 +3,351 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Test Enregistrement Audio</title>
+  <title>Enregistrement Audio & Facturation</title>
   <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
     body {
-      font-family: Arial, sans-serif;
-      max-width: 600px;
-      margin: 50px auto;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
       padding: 20px;
-      text-align: center;
     }
     
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .card {
+      background: white;
+      border-radius: 16px;
+      padding: 30px;
+      margin-bottom: 20px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+
+    h1 {
+      color: #333;
+      margin-bottom: 10px;
+      font-size: 24px;
+    }
+
+    h2 {
+      color: #555;
+      margin-bottom: 20px;
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .divider {
+      height: 1px;
+      background: #e0e0e0;
+      margin: 20px 0;
+    }
+
+    /* Section Audio */
+    .audio-controls {
+      display: flex;
+      gap: 15px;
+      justify-content: center;
+      margin: 20px 0;
+    }
+
     button {
       font-size: 16px;
-      padding: 12px 24px;
-      margin: 10px;
+      padding: 14px 28px;
       border: none;
-      border-radius: 8px;
+      border-radius: 10px;
       cursor: pointer;
-      transition: background-color 0.3s;
+      transition: all 0.3s;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
-    
+
     #start {
       background-color: #4CAF50;
       color: white;
     }
-    
+
     #start:hover:not(:disabled) {
       background-color: #45a049;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);
     }
-    
+
     #stop {
       background-color: #f44336;
       color: white;
     }
-    
+
     #stop:hover:not(:disabled) {
       background-color: #da190b;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(244, 67, 54, 0.4);
     }
-    
+
     button:disabled {
       opacity: 0.5;
       cursor: not-allowed;
+      transform: none !important;
     }
-    
-    #status {
+
+    .status {
       margin-top: 20px;
-      padding: 10px;
-      border-radius: 5px;
-      font-weight: bold;
+      padding: 12px;
+      border-radius: 8px;
+      font-weight: 600;
+      text-align: center;
+      display: none;
     }
-    
-    .recording {
+
+    .status.show {
+      display: block;
+    }
+
+    .status.recording {
       background-color: #ffebee;
       color: #c62828;
+      border: 2px solid #ef5350;
     }
-    
-    .success {
+
+    .status.success {
       background-color: #e8f5e9;
       color: #2e7d32;
+      border: 2px solid #66bb6a;
     }
-    
-    .error {
+
+    .status.error {
       background-color: #ffebee;
       color: #c62828;
+      border: 2px solid #ef5350;
+    }
+
+    /* Section Facturation */
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      color: #555;
+      font-weight: 600;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 16px;
+      transition: border-color 0.3s;
+    }
+
+    input[type="text"]:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+
+    .invoice-section {
+      background: #f8f9fa;
+      padding: 20px;
+      border-radius: 10px;
+      margin-top: 20px;
+    }
+
+    .invoice-section h3 {
+      color: #333;
+      margin-bottom: 15px;
+      font-size: 16px;
+    }
+
+    .invoice-buttons {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+    }
+
+    .btn-invoice {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 16px;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      transition: all 0.3s;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .btn-invoice:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-invoice:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none !important;
+    }
+
+    .btn-invoice .icon {
+      font-size: 24px;
+    }
+
+    .btn-invoice .label {
+      font-size: 14px;
+    }
+
+    @media (max-width: 600px) {
+      .audio-controls {
+        flex-direction: column;
+      }
+
+      .invoice-buttons {
+        grid-template-columns: 1fr;
+      }
     }
   </style>
 </head>
 <body>
-  <h1>Enregistrer un audio</h1>
-  <button id="start">▶️ Démarrer l'enregistrement</button>
-  <button id="stop" disabled>⏹️ Arrêter l'enregistrement</button>
-  <div id="status"></div>
+  <div class="container">
+    <!-- Section Enregistrement Audio -->
+    <div class="card">
+      <h1>🎙️ Enregistrement Audio</h1>
+      <div class="divider"></div>
+      
+      <div class="audio-controls">
+        <button id="start">
+          <span>▶️</span>
+          Démarrer
+        </button>
+        <button id="stop" disabled>
+          <span>⏹️</span>
+          Arrêter
+        </button>
+      </div>
+      
+      <div id="audioStatus" class="status"></div>
+    </div>
+
+    <!-- Section Facturation -->
+    <div class="card">
+      <h1>📋 Facturation Patient</h1>
+      <div class="divider"></div>
+      
+      <div class="form-group">
+        <label for="patientName">Nom du patient *</label>
+        <input 
+          type="text" 
+          id="patientName" 
+          placeholder="Entrez le nom du patient"
+          required
+        >
+      </div>
+
+      <div class="invoice-section">
+        <h3>Créer une facture</h3>
+        <div class="invoice-buttons">
+          <button class="btn-invoice" id="btnBilan">
+            <span class="icon">📄</span>
+            <span class="label">Bilan</span>
+          </button>
+          <button class="btn-invoice" id="btnBilanSemelles">
+            <span class="icon">👣</span>
+            <span class="label">Bilan + Semelles</span>
+          </button>
+        </div>
+      </div>
+
+      <div id="invoiceStatus" class="status"></div>
+    </div>
+  </div>
 
   <script>
-    // Variables globales pour gérer l'enregistrement
+    // ============================================
+    // CONFIGURATION DES WEBHOOKS
+    // ============================================
+    const WEBHOOK_AUDIO = "https://agoriade.app.n8n.cloud/webhook/8daae930-d4b3-4ac1-b70a-b030f37ad638";
+    const WEBHOOK_BILAN = "https://agoriade.app.n8n.cloud/webhook-test/patient-document"; // À MODIFIER
+    const WEBHOOK_BILAN_SEMELLES = "https://votre-webhook-bilan-semelles.com/webhook"; // À MODIFIER
+
+    // ============================================
+    // GESTION ENREGISTREMENT AUDIO
+    // ============================================
     let mediaRecorder;
     let audioChunks = [];
     let stream;
 
-    // Configuration de l'URL du webhook (à modifier)
-    const WEBHOOK_URL = "https://agoriade.app.n8n.cloud/webhook/8daae930-d4b3-4ac1-b70a-b030f37ad638";
-
-    // Fonction pour afficher un message de statut
-    function afficherStatut(message, type = '') {
-      const statusDiv = document.getElementById('status');
+    function afficherStatutAudio(message, type = '') {
+      const statusDiv = document.getElementById('audioStatus');
       statusDiv.textContent = message;
-      statusDiv.className = type;
+      statusDiv.className = 'status show ' + type;
     }
 
-    // Bouton Démarrer
     document.getElementById("start").onclick = async () => {
       try {
-        afficherStatut('Demande d\'accès au microphone...', '');
+        afficherStatutAudio('Demande d\'accès au microphone...', '');
         
-        // Demande d'accès au microphone
         stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        
-        // Création du MediaRecorder
         mediaRecorder = new MediaRecorder(stream);
         audioChunks = [];
 
-        // Événement : quand des données audio sont disponibles
         mediaRecorder.ondataavailable = (e) => {
           if (e.data.size > 0) {
             audioChunks.push(e.data);
           }
         };
 
-        // Événement : quand l'enregistrement s'arrête
         mediaRecorder.onstop = async () => {
           try {
-            afficherStatut('Envoi de l\'audio...', '');
+            afficherStatutAudio('Envoi de l\'audio...', '');
             
-            // Création du fichier audio
             const blob = new Blob(audioChunks, { type: 'audio/webm' });
             const formData = new FormData();
             formData.append('file', blob, 'recording.webm');
 
-            // Envoi vers n8n
-            const response = await fetch(WEBHOOK_URL, {
+            const response = await fetch(WEBHOOK_AUDIO, {
               method: "POST",
               body: formData
             });
 
             if (response.ok) {
-              afficherStatut('✅ Audio envoyé avec succès !', 'success');
+              afficherStatutAudio('✅ Audio envoyé avec succès !', 'success');
             } else {
               throw new Error(`Erreur serveur : ${response.status}`);
             }
           } catch (err) {
-            afficherStatut('❌ Erreur lors de l\'envoi : ' + err.message, 'error');
+            afficherStatutAudio('❌ Erreur lors de l\'envoi : ' + err.message, 'error');
             console.error(err);
           } finally {
-            // Arrêt du flux audio
             arreterFluxAudio();
           }
         };
 
-        // Démarrage de l'enregistrement
         mediaRecorder.start();
-        afficherStatut('🔴 Enregistrement en cours...', 'recording');
+        afficherStatutAudio('🔴 Enregistrement en cours...', 'recording');
         
-        // Gestion des boutons
         document.getElementById("start").disabled = true;
         document.getElementById("stop").disabled = false;
 
       } catch (err) {
-        afficherStatut('❌ Erreur d\'accès au micro : ' + err.message, 'error');
+        afficherStatutAudio('❌ Erreur d\'accès au micro : ' + err.message, 'error');
         console.error(err);
       }
     };
 
-    // Bouton Arrêter
     document.getElementById("stop").onclick = () => {
       if (mediaRecorder && mediaRecorder.state !== 'inactive') {
         mediaRecorder.stop();
@@ -163,7 +356,6 @@
       }
     };
 
-    // Fonction pour arrêter proprement le flux audio
     function arreterFluxAudio() {
       if (stream) {
         stream.getTracks().forEach(track => track.stop());
@@ -171,9 +363,70 @@
       }
     }
 
-    // Nettoyage si l'utilisateur quitte la page
     window.addEventListener('beforeunload', () => {
       arreterFluxAudio();
+    });
+
+    // ============================================
+    // GESTION FACTURATION
+    // ============================================
+    function afficherStatutFacture(message, type = '') {
+      const statusDiv = document.getElementById('invoiceStatus');
+      statusDiv.textContent = message;
+      statusDiv.className = 'status show ' + type;
+      
+      setTimeout(() => {
+        statusDiv.classList.remove('show');
+      }, 5000);
+    }
+
+    async function envoyerFacture(type, webhookUrl) {
+      const patientName = document.getElementById('patientName').value.trim();
+      
+      if (!patientName) {
+        afficherStatutFacture('⚠️ Veuillez saisir le nom du patient', 'error');
+        return;
+      }
+
+      try {
+        afficherStatutFacture('Envoi en cours...', '');
+        
+        const response = await fetch(webhookUrl, {
+          method: "POST",
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            patientName: patientName,
+            type: type
+          })
+        });
+
+        if (response.ok) {
+          afficherStatutFacture(`✅ Facture "${type}" créée pour ${patientName}`, 'success');
+          document.getElementById('patientName').value = '';
+        } else {
+          throw new Error(`Erreur serveur : ${response.status}`);
+        }
+      } catch (err) {
+        afficherStatutFacture('❌ Erreur lors de l\'envoi : ' + err.message, 'error');
+        console.error(err);
+      }
+    }
+
+    document.getElementById('btnBilan').onclick = () => {
+      envoyerFacture('Bilan', WEBHOOK_BILAN);
+    };
+
+    document.getElementById('btnBilanSemelles').onclick = () => {
+      envoyerFacture('Bilan + Semelles', WEBHOOK_BILAN_SEMELLES);
+    };
+
+    // Permettre l'envoi avec la touche Entrée
+    document.getElementById('patientName').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        document.getElementById('btnBilan').click();
+      }
     });
   </script>
 </body>
