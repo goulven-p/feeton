@@ -272,6 +272,19 @@
       </div>
 
       <div id="invoiceStatus" class="status"></div>
+
+      <!-- Zone d'affichage du QR Code -->
+      <div id="qrcodeContainer" style="display: none;">
+        <div class="divider"></div>
+        <div style="text-align: center; padding: 20px; background: #f8f9fa; border-radius: 10px;">
+          <h3 style="color: #333; margin-bottom: 15px; font-size: 16px;">📱 QR Code de la facture</h3>
+          <img id="qrcodeImage" src="" alt="QR Code" style="max-width: 300px; width: 100%; border: 3px solid #667eea; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+          <p style="margin-top: 15px; color: #666; font-size: 14px;">Scannez ce code pour accéder à la facture</p>
+          <a id="qrcodeLink" href="" target="_blank" style="display: inline-block; margin-top: 10px; padding: 10px 20px; background: #667eea; color: white; text-decoration: none; border-radius: 8px; font-weight: 600; transition: all 0.3s;">
+            🔗 Ouvrir le lien
+          </a>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -388,6 +401,9 @@
         return;
       }
 
+      // Masquer le QR code précédent
+      document.getElementById('qrcodeContainer').style.display = 'none';
+
       try {
         afficherStatutFacture('Envoi en cours...', '');
         
@@ -403,7 +419,15 @@
         });
 
         if (response.ok) {
+          const data = await response.json();
+          
           afficherStatutFacture(`✅ Facture "${type}" créée pour ${patientName}`, 'success');
+          
+          // Afficher le QR Code si présent dans la réponse
+          if (data.qrCode || data.qrCodeUrl || data.fileLink) {
+            afficherQRCode(data);
+          }
+          
           document.getElementById('patientName').value = '';
         } else {
           throw new Error(`Erreur serveur : ${response.status}`);
@@ -411,6 +435,42 @@
       } catch (err) {
         afficherStatutFacture('❌ Erreur lors de l\'envoi : ' + err.message, 'error');
         console.error(err);
+      }
+    }
+
+    function afficherQRCode(data) {
+      const container = document.getElementById('qrcodeContainer');
+      const qrImage = document.getElementById('qrcodeImage');
+      const qrLink = document.getElementById('qrcodeLink');
+      
+      // Supporter différents formats de réponse
+      let qrCodeSrc = '';
+      let fileLink = '';
+      
+      if (data.qrCode) {
+        // Si c'est une image en base64
+        qrCodeSrc = data.qrCode.startsWith('data:') ? data.qrCode : `data:image/png;base64,${data.qrCode}`;
+        fileLink = data.fileLink || '';
+      } else if (data.qrCodeUrl) {
+        // Si c'est une URL directe
+        qrCodeSrc = data.qrCodeUrl;
+        fileLink = data.fileLink || '';
+      } else if (data.fileLink) {
+        // Générer le QR code côté client avec l'API Google Charts
+        fileLink = data.fileLink;
+        qrCodeSrc = `https://chart.googleapis.com/chart?cht=qr&chs=300x300&chl=${encodeURIComponent(fileLink)}`;
+      }
+      
+      if (qrCodeSrc) {
+        qrImage.src = qrCodeSrc;
+        qrLink.href = fileLink;
+        qrLink.style.display = fileLink ? 'inline-block' : 'none';
+        container.style.display = 'block';
+        
+        // Scroll vers le QR code
+        setTimeout(() => {
+          container.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }, 300);
       }
     }
 
